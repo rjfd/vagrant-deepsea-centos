@@ -1,0 +1,19 @@
+openattic_repo: ~/Work/openattic
+deepsea_repo: ~/Work/DeepSea
+#openattic_docker_repo: https://github.com/rjfd/openattic-docker.git
+#openattic_docker_branch: wip-eperm-error
+
+libvirt_host: 192.168.1.103
+libvirt_user: rdias
+libvirt_use_ssl: true
+
+vm_memory: 4096
+vm_cpus: 2
+vm_storage_pool: vagrant
+vm_num_volumes: 2
+vm_volume_size: 6G
+
+nfs_auto_export: false
+
+build_openattic_docker_image: false
+create_openattic_node: false
