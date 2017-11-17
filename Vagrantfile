@@ -119,6 +119,8 @@ Vagrant.configure("2") do |config|
       ssh-keyscan -H node1 >> ~/.ssh/known_hosts
       ssh-keyscan -H node3 >> ~/.ssh/known_hosts
 
+      yum install -y centos-release-ceph-luminous
+
       yum install -y https://repo.saltstack.com/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
       yum install -y salt-minion
       systemctl enable salt-minion
@@ -176,6 +178,8 @@ Vagrant.configure("2") do |config|
         ssh-keyscan -H node1 >> ~/.ssh/known_hosts
         ssh-keyscan -H node3 >> ~/.ssh/known_hosts
 
+        yum install -y centos-release-ceph-luminous
+
         yum install -y https://repo.saltstack.com/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
         yum install -y salt-minion
         systemctl enable salt-minion
@@ -232,6 +236,8 @@ Vagrant.configure("2") do |config|
         ssh-keyscan -H salt >> ~/.ssh/known_hosts
         ssh-keyscan -H node1 >> ~/.ssh/known_hosts
         ssh-keyscan -H node2 >> ~/.ssh/known_hosts
+
+        yum install -y centos-release-ceph-luminous
 
         yum install -y https://repo.saltstack.com/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
         yum install -y salt-minion
@@ -335,6 +341,8 @@ Vagrant.configure("2") do |config|
 
       chmod 755 -R bin/
 
+      yum install -y centos-release-ceph-luminous
+
       yum install -y https://repo.saltstack.com/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
       yum install -y salt-master salt-minion
 
@@ -344,9 +352,9 @@ Vagrant.configure("2") do |config|
       # systemctl enable docker
       # systemctl restart docker
 
-      # zypper -n install ntp salt-minion salt-master
-      # systemctl enable ntpd
-      # systemctl start ntpd
+      yum install -y ntp
+      systemctl enable ntpd
+      systemctl start ntpd
 
       systemctl enable salt-master
       systemctl start salt-master
@@ -384,35 +392,23 @@ Vagrant.configure("2") do |config|
       cd DeepSea
       if [[ -e Makefile ]]; then
          make install
-      #    # zypper -n install deepsea
 
-      #   cat > /srv/salt/ceph/updates/default_my.sls <<EOF
-#dummy_command:
-#  test.nop
-#EOF
-        # cp /srv/salt/ceph/updates/default_my.sls /srv/salt/ceph/updates/restart
-        # sed -i 's/dummy_command/dummy_command_restart/g' /srv/salt/ceph/updates/restart/default_my.sls
-        # sed -i 's/default/default_my/g' /srv/salt/ceph/updates/init.sls
-        # sed -i 's/default/default_my/g' /srv/salt/ceph/updates/restart/init.sls
-        # cp /srv/salt/ceph/updates/default_my.sls /srv/salt/ceph/time
-        # sed -i 's/default/default_my/g' /srv/salt/ceph/time/init.sls
+         sed -i 's/#worker_threads: 5/worker_threads: 10/g' /etc/salt/master
 
-        # sed -i 's/#worker_threads: 5/worker_threads: 10/g' /etc/salt/master
-        # chown -R salt:salt /srv/pillar
-        # systemctl restart salt-master
-#       #  sleep 10
-        # echo "[DeepSea] Stage 0 - prep"
-#       #  salt-run state.orch ceph.stage.prep
+         systemctl restart salt-master
+         systemctl restart salt-minion
+         sleep 5
 
-#       #  sleep 10
-        # echo "[DeepSea] Installing and Activating Salt-API"
-#       #  salt-call state.apply ceph.salt-api
+         sleep 2
+         echo "[DeepSea] Stage 0 - prep"
+         deepsea stage run ceph.stage.prep --simple-output
 
-#       #  sleep 10
-        # echo "[DeepSea] Stage 1 - discovery"
-#       #  salt-run state.orch ceph.stage.discovery
-#       #  cat > /srv/pillar/ceph/proposals/policy.cfg <<EOF
-        cat > /tmp/policy.cfg <<EOF
+         sleep 2
+         echo "[DeepSea] Stage 1 - discovery"
+         deepsea stage run ceph.stage.discovery --simple-output
+         sleep 2
+
+         cat > /tmp/policy.cfg <<EOF
 # Cluster assignment
 cluster-ceph/cluster/*.sls
 # Hardware Profile
@@ -425,38 +421,29 @@ config/stack/default/ceph/cluster.yml
 role-master/cluster/salt*.sls
 role-admin/cluster/salt*.sls
 role-mon/cluster/#{roles['mon']}.sls
-role-igw/cluster/#{roles['igw']}.sls
+#role-igw/cluster/#{roles['igw']}.sls
 role-rgw/cluster/#{roles['rgw']}.sls
 role-mds/cluster/#{roles['mds']}.sls
 role-mon/stack/default/ceph/minions/#{roles['mon']}.yml
 role-ganesha/cluster/#{roles['ganesha']}.sls
 role-mgr/cluster/#{roles['mgr']}.sls
 EOF
-#     # chown salt:salt /srv/pillar/ceph/proposals/policy.cfg
-        # cat > /tmp/rgw.sls <<EOF
-# rgw_configurations:
-#   rgw:
-#     users:
-#       - { uid: "admin", name: "Admin", email: "admin@demo.nil", system: True }
-# EOF
-#     #    chown salt:salt /srv/pillar/ceph/rgw.sls
+         cp /tmp/policy.cfg /srv/pillar/ceph/proposals
 
-#     #    sleep 2
-      #    echo "[DeepSea] Stage 2 - configure"
-#     #    salt-run state.orch ceph.stage.configure
-#     #    sed -i 's/time_init:.*ntp/time_init: default_my/g' /srv/pillar/ceph/stack/default/global.yml
+         echo "[DeepSea] Stage 2 - configure"
+         deepsea stage run ceph.stage.configure --simple-output
 
-#     #    sleep 5
-      #   echo "[DeepSea] Stage 3 - deploy"
-#     #    DEV_ENV='true' salt-run state.orch ceph.stage.deploy
+         sleep 5
+         echo "[DeepSea] Stage 3 - deploy"
+         DEV_ENV='true' deepsea stage run ceph.stage.deploy --simple-output
 
-#     #    sleep 5
-      #   echo "[DeepSea] Stage 4 - services"
-#     #    DEV_ENV='true' salt-run state.orch ceph.stage.4
+         sleep 5
+         echo "[DeepSea] Stage 4 - services"
+         DEV_ENV='true' deepsea stage run ceph.stage.4 --simple-output
 
-#     #    chmod 644 /etc/ceph/ceph.client.admin.keyring
+         chmod 644 /etc/ceph/ceph.client.admin.keyring
 
-        touch /tmp/ready
+         touch /tmp/ready
       fi
     SHELL
   end
