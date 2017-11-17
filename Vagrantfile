@@ -346,7 +346,6 @@ Vagrant.configure("2") do |config|
       yum install -y https://repo.saltstack.com/yum/redhat/salt-repo-latest-2.el7.noarch.rpm
       yum install -y salt-master salt-minion
 
-      yum install -y python-ipaddress python-setuptools
       yum install -y http://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/p/python-click-6.3-1.el7.noarch.rpm
 
       # systemctl enable docker
